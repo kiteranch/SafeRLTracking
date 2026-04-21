@@ -1,17 +1,16 @@
 function status = phaseplot(t, y, flag, Env)
-    persistent h1 h2; % 持久变量保存图形句柄
-    status = 0;   % 返回0表示继续解算
+    persistent h1 h2; % persistent variables to store graphics handles
+    status = 0;
     
     switch flag
         case 'init'
-            % 初始化图形
+            % Initialize figure
             figure(10);
-            h1 = plot(y(3), y(4), 'b-'); % 初始线段：期望轨迹
+            h1 = plot(y(3), y(4), 'b-'); % desired trajectory
             hold on;
-            h2 = plot(y(1), y(2), 'r-'); % 初始线段：状态
+            h2 = plot(y(1), y(2), 'r-'); % state
 
-            % plot(y(1), y(2), 'ro');     % 标记初始点
-            % rectangle('Position',[-0.8 -1.25 1.4 2.5],'LineStyle','-.')
+            % plot(y(1), y(2), 'ro');     % initial point
             c1=Env.c1; r1=Env.r1; c2=Env.c2; r2=Env.r2; 
             theta=0:0.01:2*pi;
             circle1 = [c1(1)+r1*cos(theta); c1(2)+r1*sin(theta)];
@@ -22,12 +21,11 @@ function status = phaseplot(t, y, flag, Env)
 
             xlabel('x_1');
             ylabel('x_2');
-            title('二维相图');
+            title('Phase Portrait');
             % legend
-            grid on;
             % axis([-1.5 1.5 -1.5 1.5]);
         case ''
-            % 更新数据点
+            % Update data points
             if ~isempty(h1)
                 newX = [h1.XData, y(3)];
                 newY = [h1.YData, y(4)];
@@ -38,9 +36,9 @@ function status = phaseplot(t, y, flag, Env)
                 newY2 = [h2.YData, y(2)];
                 set(h2, 'XData', newX2, 'YData', newY2);
             end
-            drawnow limitrate; % 实时更新图形
+            drawnow limitrate;
         case 'done'
-            % 清理持久变量
+            % Clear persistent variables
             clear h1 h2;
         otherwise
     end
