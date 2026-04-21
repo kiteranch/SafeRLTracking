@@ -53,22 +53,7 @@ toc
     n,nv,L,p,Q,R,params,cldata,Cons), num2cell(t), num2cell(y,2), 'uni',0);
 %% Plot
 ADPTr_Plot
-% % 保存动画所需数据
-% % t 和 y 已经是 ode45 的输出
-% % 提取外系统状态 v（y 的第 n+1 到 n+nv 列）
-% v_sim = y(:, n+1:n+nv);
-% % 实际欧拉角：x 的前3个状态 (phi, theta, psi)
-% phi_act   = y(:, 1);
-% theta_act = y(:, 2);
-% psi_act   = y(:, 3);
-% % 参考欧拉角：根据外系统定义，xd = [v1; v1; v1; v2; v2; v2]，所以参考角度为 v_sim(:,1)
-% phi_ref   = v_sim(:, 1);
-% theta_ref = v_sim(:, 1);   % 与 phi_ref 相同，您可根据需要修改
-% psi_ref   = v_sim(:, 1);   % 与 phi_ref 相同
-% 
-% % 保存到文件
-% save('sim_data.mat', 't', 'phi_act', 'theta_act', 'psi_act', ...
-%                      'phi_ref', 'theta_ref', 'psi_ref');
+
 %--------------------------------------------------------------------------
 function [ydot,ra,u,mu,udhat,meP,B,usafe]=closedLoopDynamics(t,y, ...
     n,nv,L,p,QT,R,params,cldata,Cons)
