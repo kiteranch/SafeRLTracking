@@ -1,4 +1,4 @@
-% Wang XY Automatic mechanical system
+% Automatic 2024 mechanical system
 clear all
 close all
 clc
@@ -14,8 +14,16 @@ v0=[2 2]';
 options=odeset('OutputFcn',@(t,y,flag) phaseplot(t,y,flag,Env),'OutputSel',1:4);
 [t,y] = ode23(@(t,y) control(t,y,Env), tspan, [x0;v0], options);
 
-[~,Wcell] = cellfun(@(t,y)control(t,y.',Env), num2cell(t), num2cell(y,2), 'uni',0);
-%% plot
+[~,Wcell,ucell] = cellfun(@(t,y)control(t,y.',Env), num2cell(t), num2cell(y,2), 'uni',0);
+%% 
+u = cell2mat(ucell);
+e = y(:,1:2) - y(:,3:4);
+RMSE = sqrt( trapz(t, sum(e.^2, 2)) / t(end) );
+IAU  = trapz(t, abs(u));
+fprintf('RMSE = %.4f\n', RMSE);
+fprintf('IAU  = %.4f\n', IAU);
+
+% plot
 figure(1); clf
 c1=Env.c1; r1=Env.r1; c2=Env.c2; r2=Env.r2; 
 theta=0:0.01:2*pi;
@@ -29,25 +37,25 @@ pg_final = subtract(pg1,pg2);
 plot(pg_final,'FaceColor',[0.7 0.9 0.7],'FaceAlpha',0.3, 'EdgeColor','none','HandleVisibility','off')
 
 % ylim([-3.5 4.5])
-% 获取坐标轴范围和刻度
+% Get axes limits and ticks
 ax = gca;
 xlims = ax.XLim;
 ylims = ax.YLim;
 xticks = ax.XTick;
 yticks = ax.YTick;
 
-% 手动绘制网格线（置于顶层）
+% Manually draw grid lines (placed on top)
 hold on;  
-dis=0.1; %边界距离 % 2 end-1不画四周
+dis=0.1; % boundary distance % 2 end-1 do not draw around the four edges
 for i = 2:length(xticks)-1
-    plot([xticks(i), xticks(i)], [ylims(1)+dis, ylims(2)-dis], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % 垂直线
+    plot([xticks(i), xticks(i)], [ylims(1)+dis, ylims(2)-dis], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % vertical line
 end
-for i = 2:length(yticks)-1 %注意变更
-    plot([xlims(1)+dis, xlims(2)-dis], [yticks(i), yticks(i)], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % 水平线
+for i = 2:length(yticks)-1 
+    plot([xlims(1)+dis, xlims(2)-dis], [yticks(i), yticks(i)], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % horizontal line
 end
 
-plot(circle1(1,:),circle1(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % 边缘
-plot(circle2(1,:),circle2(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % 边缘
+plot(circle1(1,:),circle1(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % boundary
+plot(circle2(1,:),circle2(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % boundary
 
 plot(y(1:2001,1), y(1:2001,2), 'r-', 'LineWidth',1)
 plot(y(1:2001,3), y(1:2001,4), 'b--', 'LineWidth',1)
@@ -74,7 +82,7 @@ grid on
 % fig.PaperSize=[fig_pos(3) fig_pos(4)];
 % exportgraphics(fig, 'fig_compare2.eps','ContentType','vector')
 %--------------------------------------------------------------------------
-function [dydt,W]=control(t,y,Env)
+function [dydt,W,u]=control(t,y,Env)
     x=y(1:2); v=y(3:4);
 
     dv=reference(v);
@@ -112,7 +120,6 @@ function [dydt,W]=control(t,y,Env)
         delta=-(d+sqrt(norm(d)^2+0.1*norm(p)^4))*p'/norm(p)^2;
     end
 
-    % u=u0-5*p';
     u=u0+delta;
 
     dx=dyn_fcn(x,u);

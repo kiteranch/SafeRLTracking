@@ -1,11 +1,15 @@
 function [thetaHD,dxf,dphif,dvarphif,dP,dQ,Finfo] = identifier(thetaH,u,t,x, ...
-    xf,phif,varphif,P,Q, k,l,GammaTheta)
+    xf,phif,varphif,f0,P,Q, k,l,GammaTheta)
 persistent P_s Q_s te
 
 [phi,p] = SIDBasis(x);
 
-g=[0; 1];
-varphi=g*u; % define
+Jx = 0.0211;
+Jy = 0.0219;
+Jz = 0.0366;
+J = diag([Jx,Jy,Jz]);
+g = [zeros(3,3); J^(-1)];
+varphi=f0+g*u; % define
 
 %--------------------------------------------------------------------------
 n=length(x);
@@ -19,21 +23,21 @@ dxf=(x-xf)/k;
 dphif=(phi-phif)/k;
 dvarphif=(varphi-varphif)/k;
 
-% normalization
+% define
 phifbar = phif;
-b = ((x-xf)/k-varphif);
+y = ((x-xf)/k-varphif);
 
-% 辅助矩阵
+% Auxiliary matrices
 dP=-l*P + phifbar*phifbar';
-dQ=-l*Q + phifbar*b';
+dQ=-l*Q + phifbar*y';
 
 if rank(P)==p && te==0
     te=t 
-    out=F_info(P)
+    out=F_info(P);
 end
 
 
-% 足够信息矩阵选择性更新
+% Select the sufficiently informative matrix
 if F_info(P_s) <= F_info(P)
     P_s = P;
     Q_s = Q;
@@ -41,15 +45,15 @@ if F_info(P_s) <= F_info(P)
 end
 Finfo = F_info(P_s);
 
-thetaHD=-GammaTheta*(P_s*thetaH-Q_s);
+thetaHD = -GammaTheta*(P_s*thetaH - Q_s);
 thetaHDtmp=reshape(thetaHD,p*n,1);
-thetaHD = proj_rectangle(reshape(thetaH,p*n,1), thetaHDtmp, -5, 5, 1);
+thetaHD = proj_rectangle(reshape(thetaH,p*n,1), thetaHDtmp, -200, 200, 1);
 
 % meP = real(min(eig(P_s)));
 end
 
 function min_lambda = F_info(X)
-    % X = (X+X')/2; %强制对称化？
+    % X = (X+X')/2; % Symmetrization
     lambda = eig(X);
     lambda(lambda < 0) = 0;
     min_lambda = min(lambda);

@@ -6,18 +6,18 @@ n=2; % number of states
 m=1; % number of controls
 %% Control Gains
 % Problem Definition
-T_end = 100;
-tspan=0:0.01:T_end;
+T = 100;
+tspan=0:0.01:T;
 
 Env.c1=[0;0]; Env.r1=3;
 Env.c2=[0;0]; Env.r2=sqrt(0.5);
 R=1;
-Q=diag([10 10]);
+Q=diag([1 1]);
 
 kappa=0.1;
-Gamma=10;
+Gamma=100;
 %% System ID
-k=0.01; % 滤波器常数
+k=0.01;
 l=0.1;
 GammaTheta=10;
 %% Initial Conditions stack
@@ -41,9 +41,23 @@ options = odeset('OutputFcn',@(t,y,flag)phaseplot(t,y,flag,Env),'OutputSel',[1 2
 %     [~,ra(k)] = closedLoopDynamics(t(k),y(k,:)',n,L,p,Q,R,etac1,etac2,etaa1,etaa2,beta,nu, ...
 %     QQ,SIGPF1,SIGP,SIGPGD,PHI,PHID,GSIGMA, k,l,GammaTheta,M,kp,kTheta, cb);
 % end
-[~,RA,MEP] = cellfun(@(t,y) closedLoopDynamics(t,y.',n,L,p,Q,R, ...
+[~,RA,MEP,U] = cellfun(@(t,y) closedLoopDynamics(t,y.',n,L,p,Q,R, ...
     kappa,Gamma,k,l,GammaTheta), num2cell(t), num2cell(y,2), 'uni',0);
-%% Plot
+%% 
+% Compute RMSE and IAU
+e = y(:,1:n) - y(:,n+1:2*n);          % tracking error e = x - xd
+e_norm_sq = sum(e.^2, 2);              % ||e||^2
+integral_e = trapz(t, e_norm_sq);      % ∫||e||^2 dτ
+RMSE = sqrt(integral_e / T);           % RMSE
+
+u_vec = cell2mat(U);                   % Convert cell to vector
+u_abs = abs(u_vec);                    % |u| (m=1)
+IAU = trapz(t, u_abs);                 % ∫|u| dτ
+
+fprintf('RMSE = %.6f\n', RMSE);
+fprintf('IAU = %.6f\n', IAU);
+
+% Plot
 x_plot = y(1:2001,1:2);
 xd_plot = y(1:2001,3:4);
 figure(1);clf
@@ -63,25 +77,25 @@ pg_final = subtract(pg1,pg2);
 plot(pg_final,'FaceColor',[0.7 0.9 0.7],'FaceAlpha',0.3, 'EdgeColor','none','HandleVisibility','off')
 
 % axis([-5 4 -3.5 4.5])
-% 获取坐标轴范围和刻度
+% Get axes limits and ticks
 ax = gca;
 xlims = ax.XLim;
 ylims = ax.YLim;
 xticks = ax.XTick;
 yticks = ax.YTick;
 
-% 手动绘制网格线（置于顶层）
+% Manually draw grid lines (placed on top)
 hold on;  
-dis=0.1; %边界距离 % 2 end-1不画四周
+dis=0.1; % boundary distance % 2 end-1 do not draw around the four edges
 for i = 2:length(xticks)-1
-    plot([xticks(i), xticks(i)], [ylims(1)+dis, ylims(2)-dis], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % 垂直线
+    plot([xticks(i), xticks(i)], [ylims(1)+dis, ylims(2)-dis], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % vertical line
 end
 for i = 2:length(yticks)-1
-    plot([xlims(1)+dis, xlims(2)-dis], [yticks(i), yticks(i)], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % 水平线
+    plot([xlims(1)+dis, xlims(2)-dis], [yticks(i), yticks(i)], 'color','[0.15 0.15 0.15 0.15]','HandleVisibility','off'); % horizontal line
 end
 
-plot(circle1(1,:),circle1(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % 边缘
-plot(circle2(1,:),circle2(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % 边缘
+plot(circle1(1,:),circle1(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % boundary
+plot(circle2(1,:),circle2(2,:), 'k-.', 'LineWidth',1,'HandleVisibility','off')  % boundary
 % hold on
 plot(x_plot(:,1),x_plot(:,2),'r-','LineWidth',1)
 plot(xd_plot(:,1),xd_plot(:,2),'b--','LineWidth',1)
@@ -136,7 +150,7 @@ grid on;
 % exportgraphics(fig, 'fig_compare1.eps','ContentType','vector')
 
 %--------------------------------------------------------------------------
-function [ydot,ADPEig,meP]=closedLoopDynamics(t,y,n,L,p,QT,R, ...
+function [ydot,ADPEig,meP,u]=closedLoopDynamics(t,y,n,L,p,QT,R, ...
     kappa,Gamma,k,l,GammaTheta)
 x=y(1:n); xd=y(n+1:2*n);
 WcH = y(2*n+1:2*n+L);
@@ -160,9 +174,9 @@ gplusd=[0 1];
 phi = SIDBasis(x);
 phid= SIDBasis(xd);
 FTH=[thetaH'*phi-g*gplusd*thetaH'*phid;zeros(n,1)];
-F1 = [-hd+g*gplusd*hd;hd];  %已知部分定义为F1
+F1 = [-hd+g*gplusd*hd;hd];  % known part defined as F1
 
-udhat = gplusd*(hd-thetaH'*phid);  %期望稳态控制
+udhat = gplusd*(hd-thetaH'*phid);  % estimated steady-state controller
 G = [g;zeros(size(g))];
 
 sig_p = Basis(Zeta);
@@ -184,10 +198,10 @@ u = udhat+mu;
 
 % ADP
 omega = sig_p*(FTH+F1+G*mu);
-r = e'*QT*e + mu'*R*mu;  %Cost Function
+r = e'*QT*e + mu'*R*mu;  % Cost Function
 
-varpi=omega/(omega'*omega+1);  %归一化
-% 辅助矩阵
+varpi=omega/(omega'*omega+1);  % normalization
+% Auxiliary matrices
 dM=-kappa*M+varpi*varpi';
 dV=-kappa*V+varpi*r/(omega'*omega+1);
 

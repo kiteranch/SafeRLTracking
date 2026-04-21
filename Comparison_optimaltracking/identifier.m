@@ -17,14 +17,14 @@ dxf=(x-xf)/k;
 dphif=(phi-phif)/k;
 dvarphif=(varphi-varphif)/k;
 
-% normalization
+% define
 phifbar = phif;
 b = ((x-xf)/k-varphif);
 % phifbar = phif/(1+phif'*phif);
 % b = ((x2-x2f)/k-varphif)/(1+phif'*phif);
 
 
-% 辅助矩阵
+% Auxiliary matrices
 dP=-l*P + phifbar*phifbar';
 dQ=-l*Q + phifbar*b';
 
