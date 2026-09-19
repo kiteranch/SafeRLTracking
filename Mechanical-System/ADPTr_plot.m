@@ -5,11 +5,11 @@ subplot(311)
 WcH = y(:,2*n+1:2*n+L);
 plot(t,WcH,'LineWidth',1)
 xlabel('$t~({\rm s})$','Interpreter','latex');
-ylabel('$\hat{W}_c(t)$','Interpreter','latex','FontSize',12);
+ylabel('$\hat{w}_c(t)$','Interpreter','latex','FontSize',12);
 % title('Estimation of Critic NN');
 grid on;
-legend('$\hat{W}_{c1}$','$\hat{W}_{c2}$','$\hat{W}_{c3}$','$\hat{W}_{c4}$', ...
-    '$\hat{W}_{c5}$','$\hat{W}_{c6}$','$\hat{W}_{c7}$','interpreter','latex',...
+legend('$\hat{w}_{c1}$','$\hat{w}_{c2}$','$\hat{w}_{c3}$','$\hat{w}_{c4}$', ...
+    '$\hat{w}_{c5}$','$\hat{w}_{c6}$','$\hat{w}_{c7}$','interpreter','latex',...
     'numcolumns',2);
 xlim([0 40])
 ylim([-0.2 5])
@@ -18,11 +18,11 @@ subplot(312)
 WaH = y(:,2*n+L+1:2*n+2*L);
 plot(t,WaH,'LineWidth',1)
 xlabel('$t~({\rm s})$','Interpreter','latex');
-ylabel('$\hat{W}_a(t)$','Interpreter','latex','FontSize',12);
+ylabel('$\hat{w}_a(t)$','Interpreter','latex','FontSize',12);
 % title('Estimation of Actor NN');
 grid on;
-legend('$\hat{W}_{a1}$','$\hat{W}_{a2}$','$\hat{W}_{a3}$','$\hat{W}_{a4}$', ...
-    '$\hat{W}_{a5}$','$\hat{W}_{a6}$','$\hat{W}_{a7}$','interpreter','latex',...
+legend('$\hat{w}_{a1}$','$\hat{w}_{a2}$','$\hat{w}_{a3}$','$\hat{w}_{a4}$', ...
+    '$\hat{w}_{a5}$','$\hat{w}_{a6}$','$\hat{w}_{a7}$','interpreter','latex',...
     'numcolumns',2);
 xlim([0 40])
 ylim([-0.2 5])
@@ -41,12 +41,12 @@ for j=p+1:2*p
 end
 % end
 xlabel('$t~({\rm s})$','Interpreter','latex');
-ylabel('$\hat{W}_{\theta}(t)$','Interpreter','latex','FontSize',12);
+ylabel('$\hat{w}_{\theta}(t)$','Interpreter','latex','FontSize',12);
 % title('Estimation of uncertain parameters');
 grid on;
 box on
-legend('$\hat{W}_{\theta 1}$','$\hat{W}_{\theta 2}$','$\hat{W}_{\theta 3}$','$\hat{W}_{\theta 4}$','$\hat{W}_{\theta 5}$', ...
-    '$\hat{W}_{\theta 6}$','$\hat{W}_{\theta 7}$','$\hat{W}_{\theta 8}$','$\hat{W}_{\theta 9}$','$\hat{W}_{\theta 10}$', ...
+legend('$\hat{w}_{\theta 1}$','$\hat{w}_{\theta 2}$','$\hat{w}_{\theta 3}$','$\hat{w}_{\theta 4}$','$\hat{w}_{\theta 5}$', ...
+    '$\hat{w}_{\theta 6}$','$\hat{w}_{\theta 7}$','$\hat{w}_{\theta 8}$','$\hat{w}_{\theta 9}$','$\hat{w}_{\theta 10}$', ...
     'interpreter','latex', 'numcolumns',2);
 xlim([0 40])
 y_range = ylim;             % Get the current y-axis range
@@ -164,8 +164,8 @@ xlim([0 4])
 set(gca,'xtick',[0 1 1.26 2 3 3.42 4]);
 grid on;
 %% savefigures
-% fig=figure(4);
-% fig.PaperPositionMode='auto';
-% fig_pos=fig.PaperPosition;
-% fig.PaperSize=[fig_pos(3) fig_pos(4)];
-% exportgraphics(fig, 'fig_state.eps','ContentType','vector')
+fig=figure(3);
+fig.PaperPositionMode='auto';
+fig_pos=fig.PaperPosition;
+fig.PaperSize=[fig_pos(3) fig_pos(4)];
+exportgraphics(fig, 'fig_weight.eps','ContentType','vector')
