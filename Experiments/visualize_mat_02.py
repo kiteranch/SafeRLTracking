@@ -2,11 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 import os
+from scipy.integrate import trapezoid
 
 # -------------------- Load Data --------------------
-# mat_file = 'tracking_clover_rl_20260914_155421.mat'
-mat_file = 'tracking_clover_saferl_20260914_151841.mat'
-mat_path = os.path.join('data/260914', mat_file)   # Modify according to the actual path
+# mat_file = '02_tracking_clover_rl.mat'
+mat_file = '02_tracking_clover_saferl.mat'
+# mat_file = 'compare_02_tracking_clover.mat'
+mat_path = os.path.join('data', mat_file)   # Modify according to the actual path
 data = loadmat(mat_path)
 print(f"Load data {mat_file}.")
 
@@ -14,28 +16,21 @@ print(f"Load data {mat_file}.")
 x_low, x_high, y_low, y_high = -1.6, 1.6, -1.6, 2.4
 obstacles = [
     (np.array([1.3, 0.6]), 0.25),
-    # (np.array([-0.4, -0.1]), 0.2),
-    (np.array([1.0, -0.2]), 0.25),
-    # (np.array([-0.2, -1.1]), 0.25),
-    # (np.array([-0.25, -1.05]), 0.2),
-
-    (np.array([-0.2, -1.1]), 0.25),
-    # (np.array([-0.15, -1.0]), 0.2),
-    # (np.array([-0.175, -1.0]), 0.2),
-    # (np.array([-0.15, -0.95]), 0.2),
-    # (np.array([-0.1, -0.95]), 0.2)
+    (np.array([0.8, 0.0]), 0.2),
+    (np.array([-0.15, -1.0]), 0.2),
 ]
 robot_radius = 0.24
 
 # -------------------- Extract Variables --------------------
+print(data['time'].flatten()[-1])
 T_plot =63.0                      # Set the duration to be displayed (seconds) 
 t = data['time'].flatten()
 idx = t <= T_plot
 t = t[idx]
 state = data['state'][idx, :]                      # (N, 3) -> [x, y, psi]
 ref = data['ref'][idx, :]                          # (N, 3) -> [x_d, y_d, psi_d]
-ud = data['ud'][idx, :]                            # (N, 2)
-mu = data['mu'][idx, :]                            # (N, 2)
+# ud = data['ud'][idx, :]                            # (N, 2)
+# mu = data['mu'][idx, :]                            # (N, 2)
 cmd = data['cmd'][idx, :]                          # (N, 2)
 
 # The actual position and heading angle from the state
@@ -44,11 +39,11 @@ x, y, psi = state[:, 0], state[:, 1], state[:, 2]
 x_d, y_d, psi_d = ref[:, 0], ref[:, 1], ref[:, 2]
 
 # Position Error (Euclidean Distance)
-pos_error = np.sqrt((x - x_d)**2 + (y - y_d)**2)
+pos_err = np.sqrt((x - x_d)**2 + (y - y_d)**2)
 # Heading Error
-psi_error = np.arctan2(np.sin(psi - psi_d), np.cos(psi - psi_d))
+psi_err = np.arctan2(np.sin(psi - psi_d), np.cos(psi - psi_d))
 
-# -------------------- Figure 1: Trajectory Tracking --------------------
+# -------------------- Figure 1: State Trajectory --------------------
 fig = plt.figure(1)
 plt.gca().set_aspect('equal', adjustable='box')
 plt.xlim(-3, 3)
@@ -93,9 +88,9 @@ xp_plot,  = plt.plot(x,   y,   'r-',  linewidth=1.5, label='Actual')
 xpd_plot, = plt.plot(x_d, y_d, 'b--', linewidth=1.5, label='Reference')
 
 # 5) Add: Mark actual points at specific times
-mark_times = [8.43, 27.27, 42.22, 50.00]
+mark_times = [7.24, 28.04, 42.59, 50.00]
 colors  = ['#4DBEEE', '#77AC30', '#7E2F8E', '#EDB120']
-offsets = [(0.1, -0.2), (0.1, -0.2), (-0.9, -0.2), (-0.9, -0.2)]
+offsets = [(0.1, -0.2), (0.15, -0.2), (-0.9, -0.2), (-0.9, -0.2)]
 for i, t_mark in enumerate(mark_times):
     mi = np.argmin(np.abs(t - t_mark))
     plt.plot(x[mi], y[mi], 'x', markersize=8, markeredgewidth=1.5,
@@ -111,40 +106,41 @@ plt.legend([xp_plot, xpd_plot], ['Actual', 'Reference'],
           loc='upper right')
 # plt.tight_layout()
 
-# -------------------- Figure 2: Error, Heading, Control Input --------------------
+# -------------------- Figure 2: Tracking Error, Control Input --------------------
 plt.figure(2, figsize=[12,10])
 
 plt.subplot(2, 2, 1)
-plt.plot(t, pos_error, 'g-')
+plt.plot(t, pos_err, 'g-')
 plt.xlabel('Time (s)')
 plt.ylabel('Position error (m)')
-plt.title('Position error vs time')
+plt.title('Position')
 plt.grid(True)
 
 plt.subplot(2, 2, 2)
 # plt.plot(t, psi, 'r-', label='actual heading')
-# plt.plot(t, psi_d, 'm-', label='desired heading')
-plt.plot(t, psi_error, 'm-', label='desired heading')
+# plt.plot(t, psi_d, 'b-', label='desired heading')
+plt.plot(t, psi_err, 'm-')
 plt.xlabel('Time (s)')
-plt.ylabel('Heading (rad)')
-plt.legend()
+plt.ylabel('Heading error (rad)')
+plt.title('Heading')
 plt.grid(True)
 
-plt.subplot(2, 2, 3)
-plt.plot(t, cmd[:, 0], label=r'$u_v$')
-plt.plot(t, cmd[:, 1], label=r'$u_\omega$', linestyle='-')
-plt.xlabel('Time (s)')
-plt.ylabel('Command')
-plt.title('Control Input')
-plt.legend()
-plt.grid()
+# plt.subplot(2, 2, 3)
+# plt.plot(t, cmd[:, 0], label=r'$u_v$')
+# plt.plot(t, cmd[:, 1], label=r'$u_\omega$', linestyle='-')
+# plt.xlabel('Time (s)')
+# plt.ylabel('Command')
+# plt.title('Control Input')
+# plt.legend()
+# plt.grid(True)
 
 # plt.subplot(2, 2, 4)
-# plt.plot(t, ud, '-')
-# plt.plot(t, mu, '--')
+# plt.plot(t, ud, '-', label=r'$u_d$')
+# plt.plot(t, mu, '--', label=r'$u_e$')
 # plt.xlabel('Time (s)')
 # plt.ylabel('ud & mu')
 # plt.title('Tracking Controller')
+# plt.legend()
 # plt.grid(True)
 
 # plt.tight_layout()
@@ -156,20 +152,20 @@ if 'B' in data:
     h_arr = data['h'][idx, :]      # shape (N, num_constraints)
     H_arr = data['H'][idx, :]      # shape (N, num_constraints)
 
-    plt.figure(3, figsize=(12, 10))
+    plt.figure(3, figsize=(12,10))
     plt.subplot(2, 2, 1)
     # Define a time interval
-    t_low, t_high = 40.0, 50.0
-    idx_interval = np.where((t >= t_low) & (t <= t_high))[0]  # Get the indices within the range
-    if len(idx_interval) > 0:
-        local_max_idx = np.argmax(B[idx_interval]) # Get the index of the local maximum within the interval
-        global_idx = idx_interval[local_max_idx]  # Get the global index
-        t_max = t[global_idx]                 # Get the time of the maximum value
-        print(f"In the time interval [{t_low}, {t_high}], the maximum value of B is {B[global_idx]:.4f} at t = {t_max:.4f} s")
-    else:
-        print(f"No data points within the time interval [{t_low}, {t_high}]")
+    # t_low, t_high = 40.0, 50.0
+    # idx_interval = np.where((t >= t_low) & (t <= t_high))[0]  # Get the indices within the range
+    # if len(idx_interval) > 0:
+    #     local_max_idx = np.argmax(B[idx_interval]) # Get the index of the local maximum within the interval
+    #     global_idx = idx_interval[local_max_idx]  # Get the global index
+    #     t_max = t[global_idx]                 # Get the time of the maximum value
+    #     print(f"In the time interval [{t_low}, {t_high}], the maximum value of B is {B[global_idx]:.4f} at t = {t_max:.4f} s")
+    # else:
+    #     print(f"No data points within the time interval [{t_low}, {t_high}]")
     print('The minimum value of B:',min(B))
-    plt.plot(t, B, 'm-')
+    plt.plot(t, B, 'r-')
     plt.xlabel('Time (s)')
     plt.ylabel(r'$B(x,v)$')
     plt.title('Lyapunov-like CBF')
@@ -200,7 +196,7 @@ if 'B' in data:
     for i in range(num_constraints):
         plt.plot(t, h_arr[:, i], label=f'$h_{i+1}$')
     plt.xlabel('Time (s)')
-    plt.ylabel(r'$h(x)$')
+    plt.ylabel(r'$h_i(x)$')
     plt.title('Safety constraints h')
     plt.grid(True)
     plt.legend(loc='upper right', ncol=2)
@@ -209,7 +205,7 @@ if 'B' in data:
     for i in range(num_constraints):
         plt.plot(t, H_arr[:, i], label=f'$H_{i+1}$')
     plt.xlabel('Time (s)')
-    plt.ylabel(r'$H(x)$')
+    plt.ylabel(r'$H_i(x)$')
     plt.title('Safety constraints H')
     plt.grid(True)
     plt.legend(loc='upper right', ncol=2)
@@ -254,6 +250,17 @@ if 'Wc' in data:
     plt.grid(True)
     plt.legend()
     # plt.tight_layout()
+
+# ---------- Quantitative Metrics ----------
+T = t[-1] - t[0]
+error = np.sqrt(pos_err**2 + psi_err**2)
+RMSE = np.sqrt(trapezoid(error**2, t) / T)
+
+u_abs = abs(cmd[:, 0]) + abs(cmd[:, 1])
+IAU = trapezoid(y=u_abs, x=t)  # ∫ |u| dt
+
+print(f"RMSE: {RMSE:.4f}")
+print(f"IAU: {IAU:.4f}")
 
 # -------------------- Save as EPS --------------------
 # fig.savefig('exp02_state.eps', bbox_inches='tight', pad_inches=0)
