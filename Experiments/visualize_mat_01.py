@@ -46,7 +46,7 @@ psi_err = np.arctan2(np.sin(psi - psi_d), np.cos(psi - psi_d))
 # -------------------- Figure 1: State Trajectory --------------------
 fig = plt.figure(1)
 plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim(-3, 3)
+plt.xlim(-2, 2)
 plt.ylim(-1.8, 2.6)
 plt.xticks(np.arange(-2, 3, 1))
 
@@ -84,13 +84,13 @@ for c, r in obstacles:
             'k-.', linewidth=1.3)
 
 # 4) Reference and Actual Trajectory
-xp_plot,  = plt.plot(x,   y,   'r-',  linewidth=1.5, label='Actual')
-xpd_plot, = plt.plot(x_d, y_d, 'b--', linewidth=1.5, label='Reference')
+xp_plot,  = plt.plot(x,   y,   'b-',  linewidth=1.5, label='Trajectory')
+xpd_plot, = plt.plot(x_d, y_d, 'r-', linewidth=1.5, label='Reference')
 
 # 5) Add: Mark actual points at specific times
 mark_times = [3.18, 18.63, 31.18, 44.00]
 colors  = ['#4DBEEE', '#77AC30', '#7E2F8E', '#EDB120']
-offsets = [(0.15, 0.0), (-0.75, -0.2), (-0.95, -0.2), (-0.5, -0.2)]
+offsets = [(0.15, 0.0), (-0.75, -0.2), (-0.75, -0.25), (-0.5, -0.2)]
 for i, t_mark in enumerate(mark_times):
     mi = np.argmin(np.abs(t - t_mark))
     plt.plot(x[mi], y[mi], 'x', markersize=8, markeredgewidth=1.5,
@@ -102,7 +102,7 @@ plt.xlabel(r'$X$ (m)')
 plt.ylabel(r'$Y$ (m)')
 # plt.axis('equal')
 # plt.grid(True)
-plt.legend([xp_plot, xpd_plot], ['Actual', 'Reference'],
+plt.legend([xp_plot, xpd_plot], ['Trajectory', 'Reference'],
           loc='upper right')
 # plt.tight_layout()
 
